@@ -1,0 +1,183 @@
+# processor.py
+
+import pandas as pd
+import logging
+from typing import Dict, Union
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+class TransportDataProcessor:
+    """Main class coordinating the processing of transport data."""
+    
+    def __init__(self, year: int, side: str):
+        """
+        Initialize processor for a specific year and side of Berlin.
+        
+        Args:
+            year: The year of the data
+            side: Either 'east' or 'west'
+        """
+        self.year = year
+        self.side = side.lower()
+        if self.side not in ['east', 'west']:
+            raise ValueError("side must be either 'east' or 'west'")
+    
+    def process_raw_data(self, 
+                        input_data: Union[str, Path, pd.DataFrame], 
+                        existing_stations: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+        """
+        Process raw Fahrplanbuch data into standardized tables.
+        
+        Args:
+            input_data: Either a path to CSV file or a pandas DataFrame
+            existing_stations: DataFrame of existing station data
+            
+        Returns:
+            Dictionary containing processed dataframes
+        """
+        try:
+            # Handle input data
+            if isinstance(input_data, (str, Path)):
+                df = pd.read_csv(input_data)
+                logger.info(f"Loaded data from file: {input_data}")
+            elif isinstance(input_data, pd.DataFrame):
+                df = input_data.copy()
+                logger.info("Using provided DataFrame")
+            else:
+                raise TypeError("input_data must be either a file path or DataFrame")
+            
+            # Clean data
+            df = self._clean_line_data(df)
+            
+            # Create basic tables
+            line_df = self._create_line_table(df)
+            stops_df = self._create_stops_table(df)
+            line_stops_df = self._create_line_stops_table(line_df, stops_df)
+            
+            logger.info(f"Created tables: lines ({len(line_df)} rows), "
+                       f"stops ({len(stops_df)} rows), "
+                       f"line_stops ({len(line_stops_df)} rows)")
+            
+            return {
+                'lines': line_df,
+                'stops': stops_df,
+                'line_stops': line_stops_df
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing data: {str(e)}")
+            raise
+    
+    def _clean_line_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Clean and standardize raw line data."""
+        df = df.copy()
+        
+        # Clean string columns
+        string_cols = ['line_name', 'type', 'stops', 'east_west']
+        for col in string_cols:
+            if col in df.columns:
+                df[col] = df[col].astype(str).str.strip()
+        
+        # Clean numeric columns
+        df['year'] = self.year
+        df['frequency (7:30)'] = pd.to_numeric(df['frequency (7:30)'], errors='coerce').fillna(0)
+        df['length (time)'] = pd.to_numeric(df['length (time)'], errors='coerce').fillna(0)
+        
+        # Standardize transportation types
+        type_mapping = {
+            'tram': 'strassenbahn',
+            'strassenbahn': 'strassenbahn',
+            'u': 'u-bahn',
+            'u-bahn': 'u-bahn',
+            's': 's-bahn',
+            's-bahn': 's-bahn',
+            'bus': 'bus'
+        }
+        df['type'] = df['type'].str.lower().map(type_mapping).fillna(df['type'])
+        
+        return df
+    
+    def _create_line_table(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Create standardized line table."""
+        def extract_terminals(stops: str) -> str:
+            stations = stops.split(' - ')
+            return f"{stations[0]}<> {stations[-1]}"
+            
+        # Create line IDs
+        line_ids = [f"{self.year}{i}" for i in range(1, len(df) + 1)]
+        
+        line_df = pd.DataFrame({
+            'line_id': line_ids,
+            'year': self.year,
+            'line_name': df['line_name'],
+            'type': df['type'],
+            'start_stop': df['stops'].apply(extract_terminals),
+            'length (time)': df['length (time)'],
+            'east_west': df['east_west'],
+            'frequency (7:30)': df['frequency (7:30)']
+        })
+        
+        return line_df
+    
+    def _create_stops_table(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Create stops table with unique stations."""
+        # Split stops into individual stations
+        all_stops = []
+        for idx, row in df.iterrows():
+            stops = row['stops'].split(' - ')
+            for stop in stops:
+                all_stops.append({
+                    'stop_name': stop.strip(),
+                    'type': row['type'],
+                    'line_name': row['line_name']
+                })
+        
+        stops_df = pd.DataFrame(all_stops)
+        
+        # Remove duplicates keeping first occurrence
+        stops_df = stops_df.drop_duplicates(subset=['stop_name', 'type'])
+        
+        # Add stop IDs
+        stops_df['stop_id'] = [f"{self.year}{i}" for i in range(len(stops_df))]
+        
+        # Initialize location and identifier columns
+        stops_df['location'] = ''
+        stops_df['identifier'] = ''
+        
+        return stops_df
+    
+    def _create_line_stops_table(self, line_df: pd.DataFrame, stops_df: pd.DataFrame) -> pd.DataFrame:
+        """Create relationship table between lines and stops."""
+        line_stops = []
+        
+        for _, line in line_df.iterrows():
+            stops = line['start_stop'].split('<>')
+            first_stop = stops[0].strip()
+            last_stop = stops[1].strip()
+            
+            # Get stop IDs
+            first_stop_id = stops_df[
+                (stops_df['stop_name'] == first_stop) & 
+                (stops_df['type'] == line['type'])
+            ]['stop_id'].iloc[0]
+            
+            last_stop_id = stops_df[
+                (stops_df['stop_name'] == last_stop) & 
+                (stops_df['type'] == line['type'])
+            ]['stop_id'].iloc[0]
+            
+            line_stops.extend([
+                {
+                    'line_id': line['line_id'],
+                    'stop_id': first_stop_id,
+                    'stop_order': 0
+                },
+                {
+                    'line_id': line['line_id'],
+                    'stop_id': last_stop_id,
+                    'stop_order': 1
+                }
+            ])
+        
+        return pd.DataFrame(line_stops)
