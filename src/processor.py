@@ -53,16 +53,13 @@ class TransportDataProcessor:
             # Create basic tables
             line_df = self._create_line_table(df)
             stops_df = self._create_stops_table(df)
-            line_stops_df = self._create_line_stops_table(line_df, stops_df)
             
             logger.info(f"Created tables: lines ({len(line_df)} rows), "
-                       f"stops ({len(stops_df)} rows), "
-                       f"line_stops ({len(line_stops_df)} rows)")
+                       f"stops ({len(stops_df)} rows), ")
             
             return {
                 'lines': line_df,
-                'stops': stops_df,
-                'line_stops': line_stops_df
+                'stops': stops_df
             }
             
         except Exception as e:
@@ -84,18 +81,6 @@ class TransportDataProcessor:
         df['frequency (7:30)'] = pd.to_numeric(df['frequency (7:30)'], errors='coerce').fillna(0)
         df['length (time)'] = pd.to_numeric(df['length (time)'], errors='coerce').fillna(0)
         
-        # Standardize transportation types
-        type_mapping = {
-            'tram': 'strassenbahn',
-            'strassenbahn': 'strassenbahn',
-            'u': 'u-bahn',
-            'u-bahn': 'u-bahn',
-            's': 's-bahn',
-            's-bahn': 's-bahn',
-            'bus': 'bus'
-        }
-        df['type'] = df['type'].str.lower().map(type_mapping).fillna(df['type'])
-        
         return df
     
     def _create_line_table(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -114,10 +99,11 @@ class TransportDataProcessor:
             'type': df['type'],
             'start_stop': df['stops'].apply(extract_terminals),
             'length (time)': df['length (time)'],
+            'length (km)': df['length (km)'] if 'length (km)' in df.columns else None,
             'east_west': df['east_west'],
             'frequency (7:30)': df['frequency (7:30)']
         })
-        
+
         return line_df
     
     def _create_stops_table(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -146,38 +132,3 @@ class TransportDataProcessor:
         stops_df['identifier'] = ''
         
         return stops_df
-    
-    def _create_line_stops_table(self, line_df: pd.DataFrame, stops_df: pd.DataFrame) -> pd.DataFrame:
-        """Create relationship table between lines and stops."""
-        line_stops = []
-        
-        for _, line in line_df.iterrows():
-            stops = line['start_stop'].split('<>')
-            first_stop = stops[0].strip()
-            last_stop = stops[1].strip()
-            
-            # Get stop IDs
-            first_stop_id = stops_df[
-                (stops_df['stop_name'] == first_stop) & 
-                (stops_df['type'] == line['type'])
-            ]['stop_id'].iloc[0]
-            
-            last_stop_id = stops_df[
-                (stops_df['stop_name'] == last_stop) & 
-                (stops_df['type'] == line['type'])
-            ]['stop_id'].iloc[0]
-            
-            line_stops.extend([
-                {
-                    'line_id': line['line_id'],
-                    'stop_id': first_stop_id,
-                    'stop_order': 0
-                },
-                {
-                    'line_id': line['line_id'],
-                    'stop_id': last_stop_id,
-                    'stop_order': 1
-                }
-            ])
-        
-        return pd.DataFrame(line_stops)
