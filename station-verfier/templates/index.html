@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Station Location Verifier</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Leaflet Draw Plugin CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+        #sidebar {
+            width: 300px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            overflow-y: auto;
+        }
+        #map {
+            flex-grow: 1;
+            height: 100%;
+        }
+        .station-list {
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .station-item {
+            cursor: pointer;
+            padding: 5px;
+            margin: 2px 0;
+            border-radius: 3px;
+        }
+        .station-item:hover {
+            background-color: #e0e0e0;
+        }
+        .station-item.corrected {
+            color: green;
+            font-weight: bold;
+        }
+        .control-group {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ccc;
+        }
+        select, button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+        .current-station {
+            background-color: #d9edf7;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .line-filter {
+            margin: 5px 0;
+        }
+        .transport-type {
+            display: inline-block;
+            padding: 2px 5px;
+            margin-right: 5px;
+            border-radius: 3px;
+            color: white;
+            font-size: 0.8em;
+        }
+        .type-ubahn { background-color: #0000ff; }
+        .type-sbahn { background-color: #009900; }
+        .type-tram { background-color: #ff0000; }
+        .type-bus { background-color: #996633; }
+        .map-layers {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="sidebar">
+            <h2>Station Verifier</h2>
+            
+            <div class="control-group">
+                <label for="year-select">Select Dataset:</label>
+                <select id="year-select">
+                    <option value="">-- Select --</option>
+                    {% for year_side in year_sides %}
+                    <option value="{{ year_side.id }}">{{ year_side.year }} ({{ year_side.side }})</option>
+                    {% endfor %}
+                </select>
+                
+                <div class="line-filter" id="line-filter-container" style="display: none;">
+                    <label for="line-select">Filter by Line:</label>
+                    <select id="line-select">
+                        <option value="all">All Lines</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="current-station" id="current-station" style="display: none;">
+                <h3>Selected Station</h3>
+                <div id="station-details"></div>
+                <button id="save-correction" style="display: none;">Save Location</button>
+            </div>
+            
+            <div class="map-layers">
+                <h3>Map Layers</h3>
+                <div>
+                    <input type="checkbox" id="osm-layer" checked>
+                    <label for="osm-layer">OpenStreetMap</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="historic-layer">
+                    <label for="historic-layer">Historical Map</label>
+                </div>
+                <div id="historic-layer-selector" style="display: none;">
+                    <select id="historic-map-select">
+                        <option value="1953">Berlin 1953</option>
+                        <option value="1961">Berlin 1961</option>
+                        <option value="1975">Berlin 1975</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="station-list-container">
+                <h3>Stations</h3>
+                <input type="text" id="station-search" placeholder="Search stations...">
+                <div class="station-list" id="station-list"></div>
+            </div>
+            
+            <div class="export-controls" style="margin-top: 20px;">
+                <button id="export-btn">Export Corrected Data</button>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet Draw Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    
+    <script>
+        // Map initialization
+        const map = L.map('map').setView([52.5200, 13.4050], 12);  // Berlin center
+        
+        // Base layers
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Historical map layers
+        const historicalLayers = {
+            '1953': L.tileLayer('https://maps.georeferencer.com/georeferences/222594302053/2017-02-20T14:34:49.409272Z/map/{z}/{x}/{y}.png?key=ogcYUX7IezKreSK7sODw', {
+                attribution: 'Historical Map 1953 - sample from Georeferencer',
+                minZoom: 10,
+                maxZoom: 18
+            }),
+            '1961': L.tileLayer('https://maps.georeferencer.com/georeferences/902261025902/2019-04-10T13:05:32.294625Z/map/{z}/{x}/{y}.png?key=ogcYUX7IezKreSK7sODw', {
+                attribution: 'Historical Map 1961 - sample from Georeferencer',
+                minZoom: 10,
+                maxZoom: 18
+            }),
+            '1975': L.tileLayer('https://maps.georeferencer.com/georeferences/237001477902/2017-02-20T14:47:12.309036Z/map/{z}/{x}/{y}.png?key=ogcYUX7IezKreSK7sODw', {
+                attribution: 'Historical Map 1975 - sample from Georeferencer',
+                minZoom: 10,
+                maxZoom: 18
+            })
+        };
+        
+        // Variables for app state
+        let currentYearSide = null;
+        let stationsData = null;
+        let linesData = null;
+        let stationMarkers = L.layerGroup().addTo(map);
+        let selectedStation = null;
+        let markerDraggedPosition = null;
+        let corrections = {};
+        
+        // Layer control toggle events
+        document.getElementById('osm-layer').addEventListener('change', function(e) {
+            if(e.target.checked) {
+                map.addLayer(osmLayer);
+            } else {
+                map.removeLayer(osmLayer);
+            }
+        });
+        
+        document.getElementById('historic-layer').addEventListener('change', function(e) {
+            const historicLayerSelector = document.getElementById('historic-layer-selector');
+            
+            if(e.target.checked) {
+                historicLayerSelector.style.display = 'block';
+                
+                // Add the currently selected historical map
+                const selectedYear = document.getElementById('historic-map-select').value;
+                map.addLayer(historicalLayers[selectedYear]);
+            } else {
+                historicLayerSelector.style.display = 'none';
+                
+                // Remove all historical layers
+                Object.values(historicalLayers).forEach(layer => {
+                    if (map.hasLayer(layer)) {
+                        map.removeLayer(layer);
+                    }
+                });
+            }
+        });
+        
+        document.getElementById('historic-map-select').addEventListener('change', function(e) {
+            // Remove all historical layers
+            Object.values(historicalLayers).forEach(layer => {
+                if (map.hasLayer(layer)) {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            // Add the selected historical map
+            const selectedYear = e.target.value;
+            map.addLayer(historicalLayers[selectedYear]);
+        });
+        
+        // Fetch all existing corrections
+        fetch('/get_corrections')
+            .then(response => response.json())
+            .then(data => {
+                corrections = data;
+            })
+            .catch(error => console.error('Error fetching corrections:', error));
+        
+        // Year selection
+        document.getElementById('year-select').addEventListener('change', function(e) {
+            currentYearSide = e.target.value;
+            if (!currentYearSide) return;
+            
+            // Clear the map and station list
+            stationMarkers.clearLayers();
+            document.getElementById('station-list').innerHTML = '';
+            document.getElementById('current-station').style.display = 'none';
+            
+            // Fetch data for the selected year_side
+            fetch(`/data/${currentYearSide}`)
+                .then(response => response.json())
+                .then(data => {
+                    stationsData = data.geojson;
+                    linesData = data.lines;
+                    
+                    // Populate line filter
+                    const lineSelect = document.getElementById('line-select');
+                    lineSelect.innerHTML = '<option value="all">All Lines</option>';
+                    
+                    const uniqueLines = {};
+                    linesData.forEach(line => {
+                        uniqueLines[line.line_id] = {
+                            name: line.line_name,
+                            type: line.type
+                        };
+                    });
+                    
+                    Object.entries(uniqueLines).forEach(([id, line]) => {
+                        const option = document.createElement('option');
+                        option.value = id;
+                        option.textContent = `${line.name} (${line.type})`;
+                        lineSelect.appendChild(option);
+                    });
+                    
+                    document.getElementById('line-filter-container').style.display = 'block';
+                    
+                    // Add stations to map
+                    displayStations();
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        });
+        
+        // Line filter
+        document.getElementById('line-select').addEventListener('change', function(e) {
+            displayStations();
+        });
+        
+        // Station search
+        document.getElementById('station-search').addEventListener('input', function(e) {
+            const searchText = e.target.value.toLowerCase();
+            
+            const stationItems = document.querySelectorAll('.station-item');
+            stationItems.forEach(item => {
+                const name = item.getAttribute('data-name').toLowerCase();
+                if (name.includes(searchText)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Save correction button
+        document.getElementById('save-correction').addEventListener('click', function() {
+            if (!selectedStation || !markerDraggedPosition) return;
+            
+            // Save correction
+            fetch('/save_correction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    year_side: currentYearSide,
+                    stop_id: selectedStation.properties.stop_id,
+                    lat: markerDraggedPosition.lat,
+                    lng: markerDraggedPosition.lng
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Station location saved!');
+                
+                // Update local corrections
+                if (!corrections[currentYearSide]) {
+                    corrections[currentYearSide] = {};
+                }
+                corrections[currentYearSide][selectedStation.properties.stop_id] = {
+                    lat: markerDraggedPosition.lat,
+                    lng: markerDraggedPosition.lng
+                };
+                
+                // Refresh display
+                displayStations();
+            })
+            .catch(error => console.error('Error saving correction:', error));
+        });
+        
+        // Export button
+        document.getElementById('export-btn').addEventListener('click', function() {
+            fetch('/export_corrections')
+                .then(response => response.json())
+                .then(data => {
+                    alert('Data exported to "export" directory!');
+                })
+                .catch(error => console.error('Error exporting data:', error));
+        });
+        
+        // Display stations on map and in list
+        function displayStations() {
+            // Clear previous markers
+            stationMarkers.clearLayers();
+            
+            // Clear station list
+            const stationList = document.getElementById('station-list');
+            stationList.innerHTML = '';
+            
+            if (!stationsData || !stationsData.features) return;
+            
+            // Get selected line filter
+            const lineFilter = document.getElementById('line-select').value;
+            
+            // Create markers and list items
+            stationsData.features.forEach(feature => {
+                const stationId = feature.properties.stop_id;
+                const stationName = feature.properties.name;
+                const stationType = feature.properties.type;
+                const stationLine = feature.properties.line;
+                const isCorrected = feature.properties.corrected;
+                
+                // Apply line filter if set
+                if (lineFilter !== 'all') {
+                    const lineItems = linesData.filter(l => l.line_id === lineFilter);
+                    if (lineItems.length > 0) {
+                        if (stationLine !== lineItems[0].line_name) {
+                            return; // Skip stations not on selected line
+                        }
+                    }
+                }
+                
+                // Create marker
+                const marker = L.marker([
+                    feature.geometry.coordinates[1],
+                    feature.geometry.coordinates[0]
+                ], {
+                    draggable: true,
+                    title: stationName
+                });
+                
+                marker.feature = feature;
+                
+                // Handle marker click
+                marker.on('click', function(e) {
+                    selectStation(feature, marker);
+                });
+                
+                // Handle marker drag
+                marker.on('dragend', function(e) {
+                    const latlng = e.target.getLatLng();
+                    markerDraggedPosition = latlng;
+                    document.getElementById('save-correction').style.display = 'block';
+                    
+                    // Update station details display
+                    updateStationDetails();
+                });
+                
+                // Add marker to layer
+                stationMarkers.addLayer(marker);
+                
+                // Create list item
+                const listItem = document.createElement('div');
+                listItem.className = `station-item${isCorrected ? ' corrected' : ''}`;
+                listItem.setAttribute('data-id', stationId);
+                listItem.setAttribute('data-name', stationName);
+                
+                // Add transport type indicator
+                const typeSpan = document.createElement('span');
+                typeSpan.className = `transport-type type-${stationType.replace(' ', '')}`;
+                typeSpan.textContent = stationType.charAt(0).toUpperCase();
+                listItem.appendChild(typeSpan);
+                
+                // Add station name
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = `${stationName} (${stationLine})`;
+                listItem.appendChild(nameSpan);
+                
+                // Handle list item click
+                listItem.addEventListener('click', function() {
+                    selectStation(feature, marker);
+                    map.setView([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], 17);
+                });
+                
+                stationList.appendChild(listItem);
+            });
+        }
+        
+        // Select a station
+        function selectStation(feature, marker) {
+            selectedStation = feature;
+            markerDraggedPosition = null;
+            document.getElementById('save-correction').style.display = 'none';
+            document.getElementById('current-station').style.display = 'block';
+            
+            // Highlight in list
+            const stationItems = document.querySelectorAll('.station-item');
+            stationItems.forEach(item => {
+                item.classList.remove('selected');
+                if (item.getAttribute('data-id') == feature.properties.stop_id) {
+                    item.classList.add('selected');
+                }
+            });
+            
+            updateStationDetails();
+        }
+        
+        // Update station details display
+        function updateStationDetails() {
+            if (!selectedStation) return;
+            
+            const stationDetails = document.getElementById('station-details');
+            
+            // Get original coordinates
+            const originalLat = selectedStation.geometry.coordinates[1];
+            const originalLng = selectedStation.geometry.coordinates[0];
+            
+            // Get corrected coordinates if available
+            let correctedPosition = null;
+            if (corrections[currentYearSide]?.[selectedStation.properties.stop_id]) {
+                correctedPosition = corrections[currentYearSide][selectedStation.properties.stop_id];
+            }
+            
+            // Use dragged position if available, otherwise use corrected or original
+            const currentPosition = markerDraggedPosition || 
+                      (correctedPosition ? {lat: correctedPosition.lat, lng: correctedPosition.lng} : 
+                      {lat: originalLat, lng: originalLng});
+            
+            stationDetails.innerHTML = `
+                <strong>ID:</strong> ${selectedStation.properties.stop_id}<br>
+                <strong>Name:</strong> ${selectedStation.properties.name}<br>
+                <strong>Type:</strong> ${selectedStation.properties.type}<br>
+                <strong>Line:</strong> ${selectedStation.properties.line}<br>
+                <strong>Original Position:</strong> [${originalLat.toFixed(6)}, ${originalLng.toFixed(6)}]<br>
+                <strong>Current Position:</strong> [${currentPosition.lat.toFixed(6)}, ${currentPosition.lng.toFixed(6)}]
+            `;
+        }
+    </script>
+</body>
+</html>
