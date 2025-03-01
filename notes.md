@@ -1,30 +1,42 @@
-# Berlin Transport Network Data Processing: From Historical Sources to Network Analysis
+# Data Processing: From Historical Sources to Network Analysis
 
 ## Abstract
 
-This document details the methodology developed for processing historical Berlin transport timetables (Fahrplanbücher) into structured network data suitable for computational analysis. The workflow encompasses data transcription, geolocation, enrichment, and database integration, with particular attention to data quality and historical accuracy. This process enables the analysis of Berlin's public transportation system evolution during the Cold War period (1945-1989), while maintaining the flexibility to accommodate similar historical transport network analyses.
+This entry details the methodology developed for processing historical Berlin transport timetables (Fahrplanbücher) into structured network data suitable for computational analysis. The workflow encompasses data transcription, geolocation, enrichment, and database integration, with particular attention to data quality and historical accuracy. This process enables the analysis of Berlin's public transportation system evolution during the Cold War period (1945-1989), while maintaining the flexibility to accommodate similar historical transport network analyses.
 
 ## 1. Introduction
 
 ### 1.1 Project Context
 
-The transformation of historical transport timetables into analyzable network data presents unique challenges at the intersection of digital humanities and transport history. This workflow addresses these challenges through a systematic approach to data processing, enrichment, and validation, enabling both quantitative analysis and historical interpretation.
+The transformation of historical transport timetables into analyzable network data presents unique challenges at the intersection of digital humanities and transport history. This workflow addresses these challenges through a systematic approach to data processing, enrichment, validation and modelling, enabling both quantitative analysis and historical interpretation.
 
 ### 1.2 Source Material
 
-The primary sources are Berlin transport authority (BVG) Fahrplanbücher, published annually or biannually between 1945 and 1989. These timetables provide comprehensive listings of:
+The primary sources are Berlin transport authority (BVG) Fahrplanbücher, published annually or biannually between 1945 and 1989.  From 1955 onwards we get seperate Fahrplanbücher published by the transport authorities in West-Berlin and East-Berlin respectively. These timetables provide comprehensive listings of:
 
 - Line designations
-- Station sequences
-- Service frequencies (at 7:30 AM, Monday-Friday)
-- Transport type (U-Bahn, S-Bahn, tram, bus, ferry)
+- Station sequences (varying in completeness)
+- Service frequencies at different times of the day, Monday-Friday/Saturday/Sunday
+- Transport type (U-Bahn, S-Bahn, tram, omnibus, bus, ferry)
 - Administrative divisions (East/West Berlin)
+
+-- Point about who published these books, why they were published, who the intended audience was and what their use was.
+
+Maybe have a brief introduction of workflow with a visualisation. The major steps would be digitisation/transcription -> geolocalisation -> enrichment -> visualisation/validation -> analysis
 
 ## 2. Methodology
 
 ### 2.1 Data Collection and Transcription
 
+- state of primary sources (phyisical books found in BVG Archiv and Wilhelm-Grimm-Zentrum)
+  - digitisation - I am taking pictures of the relevant pages and these are saved in the cloud
+  - maybe bring in transcription point here.
+    - Pictures of different versions of tables.
+    - Point about the complexity of information being presented increasing over time - to the point of a potential visual overload, point to the books stopping production once this information was available broadly through the internet.
+
 #### 2.1.1 Initial Data Capture
+
+Maybe describe in detail that transcribe the data into csv file with the following columns. The stops column is the most intensive, stops are seperated by "-" so that they can be seperated later into individual stations.
 
 ```python
 line_data = {
@@ -40,15 +52,22 @@ line_data = {
 
 #### 2.1.2 Data Quality Considerations
 
-- Manual transcription necessary due to OCR limitations with complex timetable layouts
+- Manual transcription necessary due to OCR limitations with complex and frequently changing timetable layouts
 - Standardization of station names required due to historical variations
 - Missing intermediate stations in some periods requiring careful documentation
+  - There are differences between the frequency of stations listed in West Berlin (more stations listed) and East Berlin (less stations, ie. larger gaps between stations listed)
 
 ### 2.2 Geolocation Process
 
+Python script running to seperate stops in the "stops" column into individual stops. I do not merge stops by name because the naming conventions are such that they do not fully describe the stop location and a large part of that information comes from the contextual line information including "Linienführung" which is available in full and can also be accessed through historical maps.
+
 #### 2.2.1 Station Location Sources
 
+I should introduce this section more.
+
 1. Existing Wikidata entries (primarily for U-Bahn and S-Bahn stations)
+   1. add the identifiers used for the types
+
 2. Historical maps and route descriptions
 3. Street intersection inference for bus and tram stops
 
@@ -78,6 +97,10 @@ class Correction:
 
 #### 2.3.1 Administrative Data
 
+Datasource:
+
+-- got to link the
+
 - District (Bezirk) assignment
 - Neighborhood (Ortsteil) classification
 - Postal code integration
@@ -88,6 +111,8 @@ class Correction:
 - Vehicle capacity estimations
 - Service frequency standardization
 - Transfer point identification
+  - calculation of walking_paths between stations based on geographic Manhattan distance (less than 500m)
+
 - Line type classification
 
 ### 2.4 Network Model Construction
@@ -149,17 +174,23 @@ project/
 
 #### 4.1.1 Timetable Completeness
 
-- Only "important" stations listed for bus and tram lines until 1975 in West Berlin
-- Varying definitions of "important" stations across years and administrative zones
-- Missing service information during special events or disruptions
-- No information about temporary route changes or construction detours
-- Limited capacity for capturing service variations by time of day
+- Only "important" stations listed for bus and tram lines
+  - After 1975 in West Berlin all stations are listed
+
+- Unclear and potentially varying definitions of "important" stations across years and administrative zones
+  - transfer stations are seen as important
+
+- Static and ideal representation of services:
+  - No information about temporary route changes or construction detours
+
+- No information on vehicle type for lines
+- S-Bahn service was part of Reichsbahn not BVG so not incorporated into timetable books
 
 #### 4.1.2 Temporal Resolution
 
 - Annual/biannual snapshots provide limited temporal granularity
 - Major events between snapshots not captured (e.g., 1949 BVG strike)
-- Service frequency data limited to 7:30 AM weekday operations
+- Currently service frequency data limited to 7:30 AM weekday operations
 - Seasonal variations in service not represented
 - Special event services not documented
 
@@ -168,15 +199,14 @@ project/
 - Political bias in reporting between East and West
 - Different administrative priorities affecting data collection
 - Varying standards for service documentation
-- Impact of Cold War on information sharing
-- Incomplete documentation of cross-border services
+- West-Berlin does not view transfer stations with S-Bahn as "important" stations so these are often left out and S-Bahn stations are rarely referenced
 
 ### 4.2 Methodological Limitations
 
 #### 4.2.1 Geolocation Challenges
 
 - Approximate locations for many bus and tram stops
-- Street name changes over time complicating location identification
+- Certain areas have been completely rebuild (ex. Alexanderplatz, complicating location identification
 - Urban development altering street layouts and intersections
 - Limited accuracy of historical maps
 - Uncertainty in exact stop locations at intersections
@@ -187,7 +217,6 @@ project/
 - Simplified representation of complex transport relationships
 - Loss of directional information for some services
 - Limited ability to model transfer times between modes
-- Difficulty in representing parallel services
 - Challenges in modeling capacity variations
 
 #### 4.2.3 Data Standardization
@@ -195,7 +224,6 @@ project/
 - Inconsistent station naming conventions across years
 - Varying detail levels between East and West Berlin
 - Different measurement standards between administrations
-- Challenges in reconciling conflicting information
 - Evolution of transport categorization systems
 
 ### 4.3 Technical Limitations
