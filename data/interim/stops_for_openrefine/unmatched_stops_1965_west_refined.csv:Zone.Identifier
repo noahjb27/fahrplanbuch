@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=http://127.0.0.1:3333/project?project=2620576459433
+HostUrl=http://127.0.0.1:3333/command/core/export-rows/1965_west.csv
