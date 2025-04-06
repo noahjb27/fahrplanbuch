@@ -25,7 +25,7 @@ def load_data(paths: Dict[str, Path], year: int, side: str) -> Tuple:
         side: Side of Berlin (east/west)
         
     Returns:
-        Tuple of (line_df, stops_df, existing_stations_df)
+        Tuple of (line_df, stops_df)
     """
     try:
         # Load base data
@@ -43,12 +43,7 @@ def load_data(paths: Dict[str, Path], year: int, side: str) -> Tuple:
         final_stops = pd.read_csv(verified_path)
         logger.info(f"Loaded verified stops: {len(final_stops)} stops")
         
-        # Load existing stations reference
-        existing_stations_path = paths['existing_stations']
-        existing_stations_df = pd.read_csv(existing_stations_path)
-        logger.info(f"Loaded existing stations: {len(existing_stations_df)} stations")
-        
-        return line_df, final_stops, existing_stations_df
+        return line_df, final_stops
         
     except Exception as e:
         logger.error(f"Error loading data: {e}")
