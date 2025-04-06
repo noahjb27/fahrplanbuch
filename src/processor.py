@@ -122,10 +122,10 @@ class TransportDataProcessor:
         stops_df = pd.DataFrame(all_stops)
         
         # Remove duplicates keeping first occurrence
-        stops_df = stops_df.drop_duplicates(subset=['stop_name', 'type'])
+        stops_df = stops_df.drop_duplicates(subset=['stop_name', 'type', 'line_name'])
         
         # Add stop IDs
-        stops_df['stop_id'] = [f"{self.year}{i}" for i in range(len(stops_df))]
+        stops_df['stop_id'] = [f"{self.year}{i}_{self.side}" for i in range(len(stops_df))]
         
         # Initialize location and identifier columns
         stops_df['location'] = ''
