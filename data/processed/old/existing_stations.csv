@@ -11,7 +11,6 @@ stop_id,stop_name,type,location,in_lines,identifier,line_name,district,neighborh
 19659,Hermannstrasse/Britzer Damm,strassenbahn,"52.46276073,13.43439092",,,15,Neukölln,Britz,west
 196510,U-Bhf. Neukölln,strassenbahn,"52.46965568,13.44161494",,,15,Neukölln,Neukölln,east
 196511,Richardstrasse Ecke Braunschweigerstrasse,strassenbahn,"52.47098038,13.44634551",,,15,Neukölln,Neukölln,east
-196512,Saalestrasse Ecke Braunschweigerstrasse,strassenbahn,"52.47386377,13.45592059",,,15,,,
 196512,Saalestrasse Ecke Sonnenallee,strassenbahn,"52.47384843,13.45589857",,,15,Neukölln,Neukölln,east
 196513,Dammweg Ecke Sonnenallee,strassenbahn,"52.47028918,13.46461967",,,15,Neukölln,Neukölln,east
 196514,Schulenburgpark,strassenbahn,"52.46666061,13.47029259",,,15,Neukölln,Neukölln,east
@@ -56,7 +55,6 @@ stop_id,stop_name,type,location,in_lines,identifier,line_name,district,neighborh
 196552,Hohenzollernring Ecke Neuendorferstrasse,strassenbahn,"52.55571250,13.20754149",,,55,Spandau,Hakenfelde,west
 196553,Hakenfelde,strassenbahn,"52.57886010,13.21005780",,,55,Spandau,Hakenfelde,west
 196554,"Zoo, Kantstrasse",strassenbahn,"52.50528855,13.33160349",,,75,Charlottenburg-Wilmersdorf,Charlottenburg,west
-196555,"Spandau, Hakenfelde",strassenbahn,"52.57049943,13.21252012",,,55,,,
 196555,Leibnizstrasse Ecke Kantstrasse,strassenbahn,"52.50628812,13.31395372",,,75,Spandau,Hakenfelde,west
 196556,Wilmersdorferstrasse Ecke Kantstrasse,strassenbahn,"52.50669450,13.30667544",,,75,Charlottenburg-Wilmersdorf,Charlottenburg,west
 196557,Amtsgericht,strassenbahn,"52.50682618,13.29739145",,,75,Charlottenburg-Wilmersdorf,Charlottenburg,west
@@ -739,7 +737,6 @@ stop_id,stop_name,type,location,in_lines,identifier,line_name,district,neighborh
 1965727,Holtheimer Weg Ecke Wormbacher Weg,autobus,"52.40993905,13.30336414",,,A85,Steglitz-Zehlendorf,Lichterfelde,west
 1965728,Invalidenstrasse (Sektorengrenze),autobus,"52.52731343,13.37206043",,,A86,Mitte,Moabit,west
 1965729,Rathenowerstrasse Ecke Alt-Moabit,autobus,"52.52363005,13.35684871",,,A86,Charlottenburg-Wilmersdorf,Wilmersdorf,west
-1965729,Bundesallee Ecke Berlinerstraße,autobus,"52.48734067,13.33098765",,,A85,,,
 1965730,Stromstrasse Ecke Alt-Moabit,autobus,"52.52539702,13.34278622",,,A86,Mitte,Moabit,west
 1965731,Gotzkowskystrasse Ecke Alt-Moabit,autobus,"52.52381416,13.32973099",,,A86,Mitte,Moabit,west
 1965732,Helmholtzstrasse Ecke Franklinstrasse,autobus,"52.52234318,13.32844863",,,A86,Charlottenburg-Wilmersdorf,Charlottenburg,west
@@ -1023,86 +1020,3 @@ stop_id,stop_name,type,location,in_lines,identifier,line_name,district,neighborh
 19651965870,Richard-Wagner-Platz,strassenbahn,"52.51739226,13.30650847",,,55,Charlottenburg-Wilmersdorf,Charlottenburg,west
 19651965872,Pionierstrasse Ecke Zeppelinstrasse,autobus,"52.55151570,13.18550432",,,A63,Spandau,Falkenhagener Feld,west
 19651965873,Rathaus Wannsee,autobus,"52.41842454,13.14881635",,,AS4,Steglitz-Zehlendorf,Wannsee,west
-19650,"Marienfelde, Daimlerstrasse",tram,"52.42393712,13.38022295",,,15,Tempelhof-Schöneberg,Marienfelde,west
-19651,Großbeerenstrasse Ecke Daimlerstrasse,tram,"52.42636276,13.37438168",,,15,Tempelhof-Schöneberg,Marienfelde,west
-19652,Körtingstrasse Ecke Großbeerenstrasse,tram,"52.43481353,13.37831564",,,15,Tempelhof-Schöneberg,Mariendorf,west
-19653,Mariendorferdamm Ecke Alt-Mariendorf,tram,"52.44016815,13.38730997",,,15,Tempelhof-Schöneberg,Mariendorf,west
-19654,Imbrosweg Ecke Rixdorferstrasse,tram,"52.44352627,13.39862544",,,15,Tempelhof-Schöneberg,Mariendorf,west
-19655,Mariendamm Friedhof,tram,"52.44953069,13.40475593",,,15,Tempelhof-Schöneberg,Mariendorf,west
-19656,Industriestrasse Ecke Gottlieb-Dunkel-Strasse,tram,"52.45533607,13.40989571",,,15,Tempelhof-Schöneberg,Tempelhof,west
-19657,Germaniastrasse Ecke Gottlieb-Dunkel-Strasse,tram,"52.46053987,13.41805889",,,15,Tempelhof-Schöneberg,Tempelhof,west
-19658,"Frauenklinik, Mariendorferweg",tram,"52.46394991,13.42750955",,,15,Neukölln,Neukölln,east
-19659,Hermannstrasse/Britzer Damm,tram,"52.46276073,13.43439092",,,15,Neukölln,Britz,west
-196510,U-Bhf. Neukölln,tram,"52.46965568,13.44161494",,,15,Neukölln,Neukölln,east
-196511,Richardstrasse Ecke Braunschweigerstrasse,tram,"52.47098038,13.44634551",,,15,Neukölln,Neukölln,east
-196512,Saalestrasse Ecke Sonnenallee,tram,"52.47384843,13.45589857",,,15,Neukölln,Neukölln,east
-196513,Dammweg Ecke Sonnenallee,tram,"52.47028918,13.46461967",,,15,Neukölln,Neukölln,east
-196514,Schulenburgpark,tram,"52.46666061,13.47029259",,,15,Neukölln,Neukölln,east
-196515,Gradestrasse Ecke Tempelhofer Weg,tram,"52.45253932,13.43305683",,,47,Neukölln,Britz,west
-196516,U-Bhf. Blaschkoallee,tram,"52.45247429,13.44902591",,,47,Neukölln,Britz,west
-196517,Buschkrugallee Ecke Blaschkoallee,tram,"52.45253092,13.45217109",,,47,Neukölln,Britz,west
-196518,Onkel-Herse-Strasse Ecke Buschkrugallee,tram,"52.44824572,13.45392578",,,47,Neukölln,Britz,west
-196519,Parchimerallee Ecke Buschkrugallee,tram,"52.44543069,13.45497615",,,47,Neukölln,Britz,west
-196520,Grünerweg Ecke Buschkrugallee,tram,"52.44256249,13.45634565",,,47,Neukölln,Britz,west
-196521,Krankenhaus Neukölln,tram,"52.43977054,13.45935906",,,47,Neukölln,Buckow,west
-196522,Johannisthaler Chaussee Ecke Rudowerstrasse,tram,"52.43431775,13.46904333",,,47,Neukölln,Buckow,west
-196523,Wildmeisterdamm Ecke Neuköllnerstrasse,tram,"52.42577675,13.48323925",,,47,Neukölln,Rudow,west
-196524,Stubenrauchstrasse Ecke Neuköllnerstrasse,tram,"52.42416862,13.48544348",,,47,Neukölln,Rudow,west
-196525,Köpenickerstrasse Ecke Neuköllnerstrasse,tram,"52.41693184,13.49408867",,,47,Neukölln,Rudow,west
-196526,Groß-Ziethener-Chaussee Ecke Waltersdorferchaussee,tram,"52.41611361,13.49741897",,,47,Neukölln,Rudow,west
-196527,"Rudow, Stadtgrenze",tram,"52.40149832,13.51359770",,,47P,Neukölln,Rudow,west
-196528,Richard-Wagner-Platz,tram,"52.51757062,13.30624812",,,53,Charlottenburg-Wilmersdorf,Charlottenburg,west
-196529,Luisenplatz,tram,"52.52039497,13.29942701",,,53,Charlottenburg-Wilmersdorf,Charlottenburg,west
-196530,Klausenerplatz,tram,"52.51920201,13.29186737",,,53,Charlottenburg-Wilmersdorf,Charlottenburg,west
-196531,Kirschenallee Ecke Spandauerdamm,tram,"52.52038534,13.26714901",,,53,Charlottenburg-Wilmersdorf,Westend,west
-196532,Schloß Ruhwald,tram,"52.52160458,13.26039687",,,53,Charlottenburg-Wilmersdorf,Westend,west
-196533,U-Bhf. Ruhleben,tram,"52.52595777,13.24137187",,,53,Spandau,Spandau,west
-196534,Teltowerstrasse Ecke Ruhlebenerstrasse,tram,"52.52649488,13.21644671",,,53,Spandau,Wilhelmstadt,west
-196535,Freiheit,tram,"52.53269779,13.20751844",,,53,Spandau,Spandau,west
-196536,Spandauer Markt,tram,"52.53687071,13.20531554",,,53,Spandau,Spandau,west
-196537,Hafenplatz,tram,"52.54229255,13.20620113",,,53,Spandau,Spandau,west
-196538,Lynarstrasse Ecke Neuendorferstrasse,tram,"52.54898037,13.21025253",,,53,Spandau,Hakenfelde,west
-196539,Hohenzollernring Ecke Streitstrasse,tram,"52.55572554,13.20753076",,,53,Spandau,Hakenfelde,west
-196540,"Hakenfelde, Niederneuendorferallee",tram,"52.57049943,13.21252012",,,53,Spandau,Hakenfelde,west
-196541,Lynarstrasse Ecke Schönwalderstrasse,tram,"52.54844825,13.20081057",,,54,Spandau,Spandau,west
-196542,"Spandau, Johannesstift",tram,"52.56762417,13.19178261",,,54,Spandau,Hakenfelde,west
-196543,Bhf. Zoo,tram,"52.50719346,13.33262988",,,55,Spandau,Hakenfelde,west
-196544,Ernst-Reuter-Platz,tram,"52.51159182,13.32257153",,,55,Charlottenburg-Wilmersdorf,Charlottenburg,west
-196545,Otto-Suhr-Allee Ecke Leibnizstrasse,tram,"52.51465062,13.31519191",,,55,Charlottenburg-Wilmersdorf,Charlottenburg,west
-196546,Osnabrückerstrasse Ecke Tegelerweg,tram,"52.52651985,13.29732033",,,55,Charlottenburg-Wilmersdorf,Charlottenburg,west
-196547,Jakob-Kaiser-Platz,tram,"52.53674528,13.29357089",,,55,Charlottenburg-Wilmersdorf,Charlottenburg-Nord,west
-196548,Quellweg Ecke Nonnendammallee,tram,"52.53662795,13.26837045",,,55,Charlottenburg-Wilmersdorf,Charlottenburg,west
-196549,Paulsternstrasse Ecke Gartenfelderstrasse,tram,"52.54412196,13.24701046",,,55,Spandau,Haselhorst,west
-196550,Zitadellenweg Ecke Am Juliusturm,tram,"52.53777974,13.21728515",,,55,Spandau,Siemensstadt,west
-196551,Carl-Schurz-Strasse Ecke Am Juliusturm,tram,"52.53954502,13.20555083",,,55,Spandau,Spandau,west
-196552,Hohenzollernring Ecke Neuendorferstrasse,tram,"52.55571250,13.20754149",,,55,Spandau,Hakenfelde,west
-196553,Hakenfelde,tram,"52.57886010,13.21005780",,,55,Spandau,Hakenfelde,west
-196554,"Zoo, Kantstrasse",tram,"52.50528855,13.33160349",,,75,Spandau,Hakenfelde,west
-196555,Leibnizstrasse Ecke Kantstrasse,tram,"52.50628812,13.31395372",,,75,Spandau,Hakenfelde,west
-196556,Wilmersdorferstrasse Ecke Kantstrasse,tram,"52.50669450,13.30667544",,,75,Charlottenburg-Wilmersdorf,Charlottenburg,west
-196557,Amtsgericht,tram,"52.50682618,13.29739145",,,75,Charlottenburg-Wilmersdorf,Charlottenburg,west
-196558,Messedamm,tram,"52.50641939,13.28039244",,,75,Charlottenburg-Wilmersdorf,Westend,west
-196559,Theodor-Heuss-Platz,tram,"52.50948066,13.27259770",,,75,Charlottenburg-Wilmersdorf,Westend,west
-196560,Preußenallee Ecke Heerstrasse,tram,"52.50859211,13.25931279",,,75,Charlottenburg-Wilmersdorf,Westend,west
-196561,Reichssportfeldstrasse Ecke Heerstrasse,tram,"52.50751473,13.24208670",,,75,Charlottenburg-Wilmersdorf,Westend,west
-196562,Stößenseebrücke,tram,"52.50889437,13.21747597",,,75,Charlottenburg-Wilmersdorf,Westend,west
-196563,Pichelsdorferstrasse Ecke Heerstrasse,tram,"52.51311471,13.19691856",,,75,Charlottenburg-Wilmersdorf,Westend,west
-196564,Seeburgerstrasse Ecke Klosterstrasse,tram,"52.52914199,13.19558478",,,75,Spandau,Wilhelmstadt,west
-196565,Rathaus Spandau,tram,"52.53488082,13.19905885",,,75,Spandau,Spandau,west
-196566,"Spandau, Markt",tram,"52.53784350,13.20413543",,,75,Spandau,Spandau,west
-196567,Hohenzollernring Ecke Schönwalderstrasse,tram,"52.55536761,13.19859324",,,76,Spandau,Hakenfelde,west
-196568,Johannesstift,tram,"52.56762417,13.19178261",,,76,Spandau,Hakenfelde,west
-196569,Lindenstrasse Ecke Kochstrasse,tram,"52.50708787,13.39827979",,,96,Friedrichshain-Kreuzberg,Kreuzberg,west
-196570,Mehringplatz,tram,"52.49792491,13.39108107",,,96,Spandau,Hakenfelde,west
-196571,Yorckstrasse Ecke Mehringdamm,tram,"52.49288890,13.38767014",,,96,Friedrichshain-Kreuzberg,Kreuzberg,west
-196572,U-Bhf. Flughafen,tram,"52.48477998,13.38596223",,,96,Tempelhof-Schöneberg,Tempelhof,west
-196573,Adolf-Scheidt-Platz,tram,"52.47819486,13.37836902",,,96,Friedrichshain-Kreuzberg,Kreuzberg,west
-196574,Berlinickeplatz,tram,"52.46632968,13.37814469",,,96,Tempelhof-Schöneberg,Tempelhof,west
-196575,Attilaplatz,tram,"52.45549834,13.37561964",,,96,Tempelhof-Schöneberg,Tempelhof,west
-196576,Ringstrasse Ecke Attilastrasse,tram,"52.44731185,13.36209225",,,96,Tempelhof-Schöneberg,Tempelhof,west
-196577,"Lankwitz, Kirche",tram,"52.43629411,13.34577794",,,96,Steglitz-Zehlendorf,Lankwitz,west
-196578,Seydlitzstrasse Ecke Kaiser-Wilhelm-Strasse,tram,"52.43194429,13.33814378",,,96,Steglitz-Zehlendorf,Lankwitz,west
-196579,Kranoldplatz,tram,"52.42782085,13.32657579",,,96,Steglitz-Zehlendorf,Lichterfelde,west
-196580,Ostpreußendamm Ecke Morgensternstrasse,tram,"52.42589579,13.31710731",,,96,Steglitz-Zehlendorf,Lankwitz,west
-196581,Giesensdorferstrasse Ecke Ostpreußendamm,tram,"52.42400572,13.31441951",,,96,Steglitz-Zehlendorf,Lichterfelde,west
-196582,"Lichterfelde, Goerzallee",tram,"52.41785382,13.28703404",,,96,Steglitz-Zehlendorf,Lichterfelde,west
