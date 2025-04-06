@@ -1,3 +1,4 @@
+# station-verifier/app.py
 from flask import Flask, render_template, request, jsonify, send_from_directory
 import pandas as pd
 import json
@@ -5,6 +6,7 @@ import os
 from pathlib import Path
 from flask_cors import CORS
 import rasterio
+from db_connector import StationVerifierDB
 
 app = Flask(__name__)
 
@@ -25,30 +27,25 @@ if not CORRECTIONS_FILE.exists():
 TILES_DIR = Path("tiles")
 TILES_DIR.mkdir(exist_ok=True)
 
-# Make sure the TIF files directory exists (renamed from 1965 to tif for clarity)
+# Make sure the TIF files directory exists
 TIF_DIR = TILES_DIR / "tif"
 TIF_DIR.mkdir(parents=True, exist_ok=True)
+
+# Initialize database connection
+db = StationVerifierDB()
 
 CORS(app)
 
 @app.route('/')
 def index():
-    # Get list of all available year_side combinations
-    year_sides = []
-    for item in os.listdir(DATA_DIR):
-        item_path = DATA_DIR / item
-        if item_path.is_dir() and (item_path / "stops.csv").exists():
-            year, side = item.split('_') if '_' in item else (item, None)
-            year_sides.append({"year": year, "side": side, "id": item})
+    # Get list of all available year_side combinations from the database
+    year_sides = db.get_available_year_sides()
     
-    return render_template('index.html', year_sides=sorted(year_sides, key=lambda x: (x['year'], x['side'])))
+    return render_template('index.html', year_sides=year_sides)
 
 @app.route('/data/<year_side>')
 def get_year_side_data(year_side):
     """Get all data for a specific year_side"""
-    stops_file = DATA_DIR / year_side / "stops.csv"
-    lines_file = DATA_DIR / year_side / "lines.csv"
-    line_stops_file = DATA_DIR / year_side / "line_stops.csv"
     
     # Load corrected stations
     corrections = {}
@@ -56,25 +53,29 @@ def get_year_side_data(year_side):
         with open(CORRECTIONS_FILE, 'r') as f:
             corrections = json.load(f)
     
-    # Read data
+    # Read data from database
     try:
-        stops_df = pd.read_csv(stops_file)
-        lines_df = pd.read_csv(lines_file)
-        line_stops_df = pd.read_csv(line_stops_file)
+        data = db.get_year_side_data(year_side)
+        stops_df = data["stops"]
+        lines_df = data["lines"]
+        
+        if stops_df.empty:
+            return jsonify({"error": f"No data found for {year_side}"}), 404
         
         # Apply corrections to stops dataframe (only for display, not modifying original)
         stops_display = stops_df.copy()
         for stop_id, correction in corrections.get(year_side, {}).items():
             if stop_id in stops_display['stop_id'].values:
                 idx = stops_display.loc[stops_display['stop_id'] == stop_id].index[0]
-                stops_display.at[idx, 'location'] = f"{correction['lat']},{correction['lng']}"
+                stops_display.at[idx, 'latitude'] = correction['lat']
+                stops_display.at[idx, 'longitude'] = correction['lng']
         
         # Convert to GeoJSON for mapping
         features = []
         for _, row in stops_display.iterrows():
-            if pd.notna(row['location']):
+            if pd.notna(row['latitude']) and pd.notna(row['longitude']):
                 try:
-                    lat, lng = map(float, str(row['location']).strip('"').split(','))
+                    lat, lng = float(row['latitude']), float(row['longitude'])
                     feature = {
                         "type": "Feature",
                         "geometry": {
@@ -137,42 +138,15 @@ def save_correction():
 
 @app.route('/export_corrections')
 def export_corrections():
-    """Export corrected data as CSVs"""
+    """Export corrected data to Neo4j database"""
     # Load corrections
     with open(CORRECTIONS_FILE, 'r') as f:
         corrections = json.load(f)
     
-    # Create export directory
-    export_dir = Path("export")
-    export_dir.mkdir(exist_ok=True)
+    # Update database with all corrections
+    result = db.export_corrected_data(corrections)
     
-    # For each year_side with corrections
-    for year_side, stops_corrections in corrections.items():
-        # Read original stops file
-        stops_file = DATA_DIR / year_side / "stops.csv"
-        if not stops_file.exists():
-            continue
-        
-        stops_df = pd.read_csv(stops_file)
-        
-        # Apply corrections
-        for stop_id, correction in stops_corrections.items():
-            if int(stop_id) in stops_df['stop_id'].values:
-                idx = stops_df.loc[stops_df['stop_id'] == int(stop_id)].index[0]
-                stops_df.at[idx, 'location'] = f"{correction['lat']},{correction['lng']}"
-        
-        # Save corrected file
-        year_side_dir = export_dir / year_side
-        year_side_dir.mkdir(exist_ok=True)
-        stops_df.to_csv(year_side_dir / "stops.csv", index=False)
-        
-        # Copy other files without modification
-        for filename in ["lines.csv", "line_stops.csv"]:
-            src_file = DATA_DIR / year_side / filename
-            if src_file.exists():
-                pd.read_csv(src_file).to_csv(year_side_dir / filename, index=False)
-    
-    return jsonify({"status": "success", "message": "Data exported to 'export' directory"})
+    return jsonify(result)
 
 @app.route('/get_corrections')
 def get_corrections():
@@ -183,6 +157,7 @@ def get_corrections():
         return jsonify(corrections)
     return jsonify({})
 
+# Keep the existing tile-related routes unchanged
 @app.route('/tiles/<path:filepath>')
 def serve_tile(filepath):
     """Serve a tile from the tiles directory"""
@@ -201,7 +176,7 @@ def available_tile_sets():
         item_path = TILES_DIR / item
         
         # Skip the original TIF files or directories
-        if item.endswith(('.tif', '.tiff')) or item == "tif":  # Changed from 1965 to tif
+        if item.endswith(('.tif', '.tiff')) or item == "tif":
             continue
             
         if item_path.is_dir():
@@ -220,7 +195,7 @@ def available_tile_sets():
 @app.route('/list_tif_files')
 def list_tif_files():
     """List all TIF files in the tiles/tif directory"""
-    tif_dir = TILES_DIR / "tif"  # Changed from 1965 to tif
+    tif_dir = TILES_DIR / "tif"
     
     if not tif_dir.exists():
         return jsonify({"error": "Directory not found"}), 404
@@ -259,108 +234,6 @@ def process_single_tif(filename):
         })
     else:
         return jsonify({"error": "Failed to generate tiles"}), 500
-
-@app.route('/debug_image_bounds')
-def debug_image_bounds():
-    """Debug endpoint to get the bounds of the image in various formats"""
-    tif_path = TILES_DIR / "tif" / "1965_ost_liniennetz_geo.tif"
-    
-    if not tif_path.exists():
-        return jsonify({"error": "TIF file not found"})
-    
-    try:
-        with rasterio.open(tif_path) as src:
-            # Get bounds in original CRS
-            bounds = src.bounds
-            
-            # Convert to WGS84 (EPSG:4326)
-            from pyproj import Transformer
-            if src.crs.to_epsg() != 4326:
-                transformer = Transformer.from_crs(src.crs, "EPSG:4326", always_xy=True)
-                west_lng, south_lat = transformer.transform(bounds.left, bounds.bottom)
-                east_lng, north_lat = transformer.transform(bounds.right, bounds.top)
-            else:
-                west_lng, south_lat, east_lng, north_lat = bounds
-                
-            # Calculate center
-            center_lng = (west_lng + east_lng) / 2
-            center_lat = (south_lat + north_lat) / 2
-            
-            # Calculate Berlin coordinates in the image's CRS
-            berlin_lng, berlin_lat = 13.4050, 52.5200
-            if src.crs.to_epsg() != 4326:
-                transformer_berlin = Transformer.from_crs("EPSG:4326", src.crs, always_xy=True)
-                berlin_x, berlin_y = transformer_berlin.transform(berlin_lng, berlin_lat)
-            else:
-                berlin_x, berlin_y = berlin_lng, berlin_lat
-                
-            # Calculate pixel coordinates for Berlin
-            try:
-                berlin_pixel_row, berlin_pixel_col = src.index(berlin_x, berlin_y)
-                berlin_in_image = 0 <= berlin_pixel_row < src.height and 0 <= berlin_pixel_col < src.width
-            except:
-                berlin_pixel_row = berlin_pixel_col = None
-                berlin_in_image = False
-            
-            return jsonify({
-                "original_crs": str(src.crs),
-                "original_bounds": {
-                    "west": bounds.left,
-                    "south": bounds.bottom,
-                    "east": bounds.right,
-                    "north": bounds.top
-                },
-                "wgs84_bounds": {
-                    "west": west_lng,
-                    "south": south_lat,
-                    "east": east_lng,
-                    "north": north_lat
-                },
-                "center": {
-                    "lng": center_lng,
-                    "lat": center_lat
-                },
-                "berlin": {
-                    "lng": berlin_lng,
-                    "lat": berlin_lat,
-                    "x": berlin_x,
-                    "y": berlin_y,
-                    "pixel_row": berlin_pixel_row,
-                    "pixel_col": berlin_pixel_col,
-                    "in_image": berlin_in_image
-                },
-                "image_dimensions": {
-                    "width": src.width,
-                    "height": src.height
-                }
-            })
-    except Exception as e:
-        return jsonify({"error": str(e)})
-    
-    # Check what the min and max x/y values are for this zoom level
-    z_dir = tile_dir / str(berlin_center["z"])
-    if z_dir.exists():
-        x_dirs = [d for d in os.listdir(z_dir) if os.path.isdir(z_dir / d)]
-        x_min = min([int(x) for x in x_dirs]) if x_dirs else None
-        x_max = max([int(x) for x in x_dirs]) if x_dirs else None
-        
-        y_values = []
-        for x_dir in x_dirs:
-            x_path = z_dir / x_dir
-            y_files = [f[:-4] for f in os.listdir(x_path) if f.endswith('.png')]
-            y_values.extend([int(y) for y in y_files])
-        
-        y_min = min(y_values) if y_values else None
-        y_max = max(y_values) if y_values else None
-    else:
-        x_min = x_max = y_min = y_max = None
-    
-    return jsonify({
-        "central_tiles": central_tiles,
-        "zoom_level_exists": os.path.exists(z_dir),
-        "x_range": {"min": x_min, "max": x_max},
-        "y_range": {"min": y_min, "max": y_max},
-    })
 
 @app.route('/process_all_tifs', methods=['POST'])
 def process_all_tifs():
