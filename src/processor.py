@@ -2,7 +2,7 @@
 
 import pandas as pd
 import logging
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -25,13 +25,13 @@ class TransportDataProcessor:
     
     def process_raw_data(self, 
                         input_data: Union[str, Path, pd.DataFrame], 
-                        existing_stations: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+                        existing_stations: Optional[pd.DataFrame] = None) -> Dict[str, pd.DataFrame]:
         """
         Process raw Fahrplanbuch data into standardized tables.
         
         Args:
             input_data: Either a path to CSV file or a pandas DataFrame
-            existing_stations: DataFrame of existing station data
+            existing_stations: DataFrame of existing station data (optional)
             
         Returns:
             Dictionary containing processed dataframes
@@ -55,7 +55,7 @@ class TransportDataProcessor:
             stops_df = self._create_stops_table(df)
             
             logger.info(f"Created tables: lines ({len(line_df)} rows), "
-                       f"stops ({len(stops_df)} rows), ")
+                    f"stops ({len(stops_df)} rows), ")
             
             return {
                 'lines': line_df,
